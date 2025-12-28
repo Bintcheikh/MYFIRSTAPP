@@ -35,7 +35,7 @@ def get_proprietaire(container):
     return "Inconnu"
 
 def get_adresse(container, type_):
-    if type_ in ["moto", "location"]:
+    if type_ in ["vehicle","moto", "location"]:
         adresse_tag = container.find("div", class_="col-12 entry-zone-address")
         if adresse_tag:
             return adresse_tag.text.strip()
@@ -67,7 +67,7 @@ def scrape_listing(url, type_):
                     "marque": marque,
                     "annee": annee,
                     "prix": prix,
-                    "adresse": "Dakar",
+                    "adresse": adresse,
                     "kilometrage": kilometrage,
                     "boite": boite,
                     "carburant": carburant,
@@ -209,10 +209,24 @@ elif Choices == "Dashboard of the data":
     if os.path.exists("Vehicles_data.csv"):
         df1 = pd.read_csv("Vehicles_data.csv")
 
-        plt.figure()
-        df1.marque.value_counts()[:5].plot(kind="bar")
-        plt.title("Top 5 véhicules")
+        # Vérifier que les colonnes sont au bon type
+        df1['prix'] = pd.to_numeric(df1['prix'], errors='coerce')
+        df1['annee'] = pd.to_numeric(df1['annee'], errors='coerce')
+
+        # Top 10 marques
+        st.subheader("Top marques")
+        plt.figure(figsize=(10,6))
+        sns.countplot(y="marque", data=df1, order=df1['marque'].value_counts().index[:10])
         st.pyplot(plt.gcf())
+
+        # Prix moyen par année
+        st.subheader("Prix moyen par année")
+        plt.figure(figsize=(10,6))
+        df1.groupby("annee")["prix"].mean().plot(kind='bar')
+        plt.xlabel("Année")
+        plt.ylabel("Prix moyen (F CFA)")
+        st.pyplot(plt.gcf())
+
     else:
         st.error("Veuillez scraper au moins les véhicules pour voir le dashboard.")
 
