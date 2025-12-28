@@ -183,14 +183,16 @@ Pages = st.number_input("Nombre de pages à scraper", min_value=1, max_value=20,
 if Choices == "Scrape data using BeautifulSoup":
     st.subheader("Choisissez les données à scraper")
 
+    # ✅ Cases à cocher avec emojis
     col1, col2, col3 = st.columns(3)
     with col1:
-        scrape_vehicles = st.checkbox("Véhicules")
+        scrape_vehicles = st.checkbox("🚗 Véhicules")
     with col2:
-        scrape_motos = st.checkbox("Motos")
+        scrape_motos = st.checkbox("🏍️ Motos")
     with col3:
-        scrape_locations = st.checkbox("Locations")
+        scrape_locations = st.checkbox("🚙 Locations")
 
+    # Message si aucune catégorie n'est sélectionnée
     if not (scrape_vehicles or scrape_motos or scrape_locations):
         st.info("Veuillez sélectionner au moins une catégorie.")
         st.stop()
@@ -203,26 +205,38 @@ if Choices == "Scrape data using BeautifulSoup":
 
         for p in range(1, Pages + 1):
             if scrape_vehicles:
-                Vehicles_data = pd.concat([Vehicles_data, scrape_listing(f"https://dakar-auto.com/senegal/voitures-4?page={p}", "vehicle")], ignore_index=True)
+                Vehicles_data = pd.concat([
+                    Vehicles_data, 
+                    scrape_listing(f"https://dakar-auto.com/senegal/voitures-4?page={p}", "vehicle")
+                ], ignore_index=True)
+
             if scrape_motos:
-                Motocycles_data = pd.concat([Motocycles_data, scrape_listing(f"https://dakar-auto.com/senegal/motos-and-scooters-3?page={p}", "moto")], ignore_index=True)
+                Motocycles_data = pd.concat([
+                    Motocycles_data, 
+                    scrape_listing(f"https://dakar-auto.com/senegal/motos-and-scooters-3?page={p}", "moto")
+                ], ignore_index=True)
+
             if scrape_locations:
-                Locations_data = pd.concat([Locations_data, scrape_listing(f"https://dakar-auto.com/senegal/location-de-voitures-19?page={p}", "location")], ignore_index=True)
+                Locations_data = pd.concat([
+                    Locations_data, 
+                    scrape_listing(f"https://dakar-auto.com/senegal/location-de-voitures-19?page={p}", "location")
+                ], ignore_index=True)
 
             progress.progress(p / Pages)
 
         # Sauvegarde CSV si coché
         if scrape_vehicles:
             Vehicles_data.to_csv("Vehicles_data.csv", index=False)
-            load(Vehicles_data, "Vehicles Data")
+            load(Vehicles_data, "Vehicles Data", "1")
         if scrape_motos:
             Motocycles_data.to_csv("Motocycles_data.csv", index=False)
-            load(Motocycles_data, "Motocycles Data")
+            load(Motocycles_data, "Motocycles Data", "2")
         if scrape_locations:
             Locations_data.to_csv("Locations_data.csv", index=False)
-            load(Locations_data, "Locations Data")
+            load(Locations_data, "Locations Data", "3")
 
         st.success("Scraping terminé et fichiers CSV sauvegardés.")
+
 
 elif Choices == "Download scraped data":
     if all(os.path.exists(f) for f in ['Vehicles_data.csv','Motocycles_data.csv','Locations_data.csv']):
