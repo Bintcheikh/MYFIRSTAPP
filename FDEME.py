@@ -3,7 +3,9 @@ import pandas as pd
 import logging
 from bs4 import BeautifulSoup as bs
 from requests import get
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 logging.basicConfig(level=logging.WARNING)
 
 # ================= TITRE =================
@@ -165,7 +167,7 @@ def plot_top5(df, title, color_palette):
     plt.clf()
 
 # ===================== Interface =====================
-st.title("🚗 Dakar Auto Data App")
+st.title("Véhicules - Motos - Location")
 
 Choices = st.selectbox("Choisir une action", [
     "Scrape data using BeautifulSoup",
@@ -177,26 +179,50 @@ Choices = st.selectbox("Choisir une action", [
 Pages = st.number_input("Nombre de pages à scraper", min_value=1, max_value=20, value=3)
 
 # ===================== Logique =====================
+
 if Choices == "Scrape data using BeautifulSoup":
-    Vehicles_data = pd.DataFrame()
-    Motocycles_data = pd.DataFrame()
-    Locations_data = pd.DataFrame()
-    progress = st.progress(0)
+    st.subheader("Choisissez les données à scraper")
 
-    for p in range(1, Pages + 1):
-        Vehicles_data = pd.concat([Vehicles_data, scrape_listing(f"https://dakar-auto.com/senegal/voitures-4?page={p}", "vehicle")], ignore_index=True)
-        Motocycles_data = pd.concat([Motocycles_data, scrape_listing(f"https://dakar-auto.com/senegal/motos-and-scooters-3?page={p}", "moto")], ignore_index=True)
-        Locations_data = pd.concat([Locations_data, scrape_listing(f"https://dakar-auto.com/senegal/location-de-voitures-19?page={p}", "location")], ignore_index=True)
-        progress.progress(p / Pages)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        scrape_vehicles = st.checkbox("Véhicules")
+    with col2:
+        scrape_motos = st.checkbox("Motos")
+    with col3:
+        scrape_locations = st.checkbox("Locations")
 
-    Vehicles_data.to_csv("Vehicles_data.csv", index=False)
-    Motocycles_data.to_csv("Motocycles_data.csv", index=False)
-    Locations_data.to_csv("Locations_data.csv", index=False)
+    if not (scrape_vehicles or scrape_motos or scrape_locations):
+        st.info("Veuillez sélectionner au moins une catégorie.")
+        st.stop()
 
-    st.success("✅ Scraping terminé et fichiers CSV sauvegardés.")
-    load(Vehicles_data, "Vehicles Data")
-    load(Motocycles_data, "Motocycles Data")
-    load(Locations_data, "Locations Data")
+    if st.button("▶ Lancer le scraping"):
+        Vehicles_data = pd.DataFrame()
+        Motocycles_data = pd.DataFrame()
+        Locations_data = pd.DataFrame()
+        progress = st.progress(0)
+
+        for p in range(1, Pages + 1):
+            if scrape_vehicles:
+                Vehicles_data = pd.concat([Vehicles_data, scrape_listing(f"https://dakar-auto.com/senegal/voitures-4?page={p}", "vehicle")], ignore_index=True)
+            if scrape_motos:
+                Motocycles_data = pd.concat([Motocycles_data, scrape_listing(f"https://dakar-auto.com/senegal/motos-and-scooters-3?page={p}", "moto")], ignore_index=True)
+            if scrape_locations:
+                Locations_data = pd.concat([Locations_data, scrape_listing(f"https://dakar-auto.com/senegal/location-de-voitures-19?page={p}", "location")], ignore_index=True)
+
+            progress.progress(p / Pages)
+
+        # Sauvegarde CSV si coché
+        if scrape_vehicles:
+            Vehicles_data.to_csv("Vehicles_data.csv", index=False)
+            load(Vehicles_data, "Vehicles Data")
+        if scrape_motos:
+            Motocycles_data.to_csv("Motocycles_data.csv", index=False)
+            load(Motocycles_data, "Motocycles Data")
+        if scrape_locations:
+            Locations_data.to_csv("Locations_data.csv", index=False)
+            load(Locations_data, "Locations Data")
+
+        st.success("Scraping terminé et fichiers CSV sauvegardés.")
 
 elif Choices == "Download scraped data":
     if all(os.path.exists(f) for f in ['Vehicles_data.csv','Motocycles_data.csv','Locations_data.csv']):
@@ -207,7 +233,7 @@ elif Choices == "Download scraped data":
         load(Motocycles, "Motocycles Data")
         load(Locations, "Locations Data")
     else:
-        st.error("⚠️ Les fichiers CSV n'existent pas. Veuillez d'abord scraper les données.")
+        st.error("Les fichiers CSV n'existent pas. Veuillez d'abord scraper les données.")
 
 elif Choices == "Dashboard of the data":
     if all(os.path.exists(f) for f in ['Vehicles_data.csv','Motocycles_data.csv','Locations_data.csv']):
